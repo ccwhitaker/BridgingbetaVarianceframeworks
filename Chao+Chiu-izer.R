@@ -7,98 +7,103 @@ data1985<-read.table("percov1985.txt",header = TRUE)%>%select(-1)%>%as.matrix()
 data1983<-read.table("percov1983.txt",header = TRUE)%>%select(-1)%>%as.matrix()
 chaochiuizer <- function(Z, q, output) {
 
-##################################################
-# eqn 1, defining a site-species abundance matrix
-N <- ncol(Z) # number of communities
-S <- nrow(Z) # number of species (gamma)
-# drop all rows and columns that sum to 0
-Z <- Z[rowSums(Z) > 0, colSums(Z) > 0]
-##################################################
-# eqn 2, matrix of mean abundance (the "null")
-M = matrix(rep(rowSums(Z)/N, each=N), ncol = N, byrow=T)
-##################################################
-#Variance Framework
-#eqn 3, total centered sum of squares
-SumSqrs= sum((Z-M)^2)
-##################################################
-#Decompostion Framework
+	##################################################
+	# eqn 1, defining a site-species abundance matrix
+	N <- ncol(Z) # number of communities
+	S <- nrow(Z) # number of species (gamma)
+	# drop all rows and columns that sum to 0
+	Z <- Z[rowSums(Z) > 0, colSums(Z) > 0]
 
-# eqn 5c, multiplicative beta component
-# first, redefine reality to make life a little easier
-Ln = function(x) {ifelse(x != 0, log(x), 0)}
-Exp = function(x, y) {ifelse(x != 0, x^y, 0)}
+	##################################################
+	# eqn 2, matrix of mean abundance (the "null")
+	M = matrix(rep(rowSums(Z)/N, each=N), ncol = N, byrow=T)
 
-# eqn 5a, gamma diversity. note relativized by total abundance
-D_gamma = ifelse(q != 1,
-	sum(Exp(rowSums(Z)/sum(Z), q))^(1/(1 - q)),
-	exp(-sum((rowSums(Z)/sum(Z))*Ln(rowSums(Z)/sum(Z)))) )
+	##################################################
 
-# eqn 5b, alpha diversity.
-D_alpha = ifelse(q != 1,
-	(1/N)*sum(Exp(Z/sum(Z), q))^(1/(1-q)), 
-	exp(-sum((Z/sum(Z))*Ln(Z/sum(Z))) - log(N)) )
+	#Variance Framework
+	#eqn 3, total centered sum of squares
+	SumSqrs= sum((Z-M)^2)
+	
+	##################################################
+	#Decompostion Framework
 
-# eqn 5c, multiplicative beta component
-D_beta = D_gamma/D_alpha
+	# eqn 5c, multiplicative beta component
+	# first, redefine reality to make life a little easier
+	Ln = function(x) {ifelse(x != 0, log(x), 0)}
+	Exp = function(x, y) {ifelse(x != 0, x^y, 0)}
 
-##################################################
-# Decompostion normalized overlap measures
-# eqn 6a, N-community Sorensen; effective average proportion of a community's species that are shared across all communities; 1 - CqN is the effective average of unique species in a community
-C_qN = ifelse(q != 1,
-	((1/D_beta)^(q-1) - (1/N)^(q-1))/(1 - (1/N)^(q-1)),
-	1 - (1/(sum(Z)*Ln(N)))*sum(Z*Ln(Z/rowMeans(Z))) )
-Sorensen=1-C_qN
-# when Z is within-community rel abundances, q=1 reduces to Horn and q=2 reduces to Morisita-Horn. Is there a general solution for q=1?
+	# eqn 5a, gamma diversity. note relativized by total abundance
+	D_gamma = ifelse(q != 1,
+		sum(Exp(rowSums(Z)/sum(Z), q))^(1/(1 - q)),
+		exp(-sum((rowSums(Z)/sum(Z))*Ln(rowSums(Z)/sum(Z)))) )
+	
+	# eqn 5b, alpha diversity.
+	D_alpha = ifelse(q != 1,
+		(1/N)*sum(Exp(Z/sum(Z), q))^(1/(1-q)), 
+		exp(-sum((Z/sum(Z))*Ln(Z/sum(Z))) - log(N)) )
 
-# eqn 6b, N-community Jaccard; effective proportion of species in pooled community that are shared across all communities; 1 - UqN is the effective proportion of unique species in the pooled community
-U_qN = ifelse(q != 1,
+	# eqn 5c, multiplicative beta component
+	D_beta = D_gamma/D_alpha
+
+	##################################################
+	# Decompostion normalized overlap measures
+	# eqn 6a, N-community Sorensen; effective average proportion of a community's species that are shared across all communities; 1 - CqN is the effective average of unique species in a community
+	C_qN = ifelse(q != 1,
+		((1/D_beta)^(q-1) - (1/N)^(q-1))/(1 - (1/N)^(q-1)),
+		1 - (1/(sum(Z)*Ln(N)))*sum(Z*Ln(Z/rowMeans(Z))) )
+	Sorensen=1-C_qN
+	# when Z is within-community rel abundances, q=1 reduces to Horn and q=2 reduces to Morisita-Horn. Is there a general solution for q=1?
+
+	
+	# eqn 6b, N-community Jaccard; effective proportion of species in pooled community that are shared across all communities; 1 - UqN is the effective proportion of unique species in the pooled community
+	U_qN = ifelse(q != 1,
 	((1/D_beta)^(1-q) - (1/N)^(1-q))/(1 - (1/N)^(1-q)),
 	1 - (1/(sum(Z)*Ln(N)))*sum(Z*Ln(Z/rowMeans(Z))) )
-Jaccard=1-U_qN
-# when Z is within-community rel abundances, q=1 reduces to Horn and q=2 reduces to regional species-overlap from Chiu, Jost & Chao 2014
-#################################################
-#eqn 7a q-th order divergence
+	Jaccard=1-U_qN
+	# when Z is within-community rel abundances, q=1 reduces to Horn and q=2 reduces to regional species-overlap from Chiu, Jost & Chao 2014
+	
+	#################################################
+	#eqn 7a q-th order divergence
+	qdiv=(1/(q-1))*(sum((Z^q)-(M^q)))
+	#What q would bridge the variance framework with the decomposition framework?
 
-qdiv=(1/(q-1))*(sum((Z^q)-(M^q)))
-#What q would bridge the variance framework with the decomposition framework?
-#################################################
-#eqn 12a, normalized divergence 
-
-normdiv1=ifelse(q != 1,sum((Z^q)-(M^q))/((N^q)-N)*sum(M),
+	#################################################
+	#eqn 12a, normalized divergence 
+	normdiv1=ifelse(q != 1,sum((Z^q)-(M^q))/((N^q)-N)*sum(M),
        ((1/D_beta)^(1-1) - (1/N)^(1-1))/(1 - (1/N)^(1-1)))
-#12b
-normdiv2=ifelse(q != 1,sum((Z^q)-(M^q))/(1-(N^(1-q))*(sum(Z^q))),
-       ((1/D_beta)^(1-1) - (1/N)^(1-1))/(1 - (1/N)^(1-1)))
+	#12b
+	normdiv2=ifelse(q != 1,sum((Z^q)-(M^q))/(1-(N^(1-q))*(sum(Z^q))),
+	       ((1/D_beta)^(1-1) - (1/N)^(1-1))/(1 - (1/N)^(1-1)))
 
-# summary stuff
-N; sum(Z); S; q
-# rowSums(Z) # total abundance of ith species in pooled community
-# rowSums(Z)/N # average abundance of ith species per community
-# colSums(Z) # size of the kth community
+	# summary stuff
+	N; sum(Z); S; q
+	# rowSums(Z) # total abundance of ith species in pooled community
+	# rowSums(Z)/N # average abundance of ith species per community
+	# colSums(Z) # size of the kth community
 
-# Output function depending on output= "everything", "qdiv", or "normdiv1"
+	# Output function depending on output= "everything", "qdiv", or "normdiv1"
 
-if(output=="everything") {
-  out<-c(SumSqrs, D_gamma, D_alpha, D_beta, Sorensen, Jaccard,qdiv,normdiv1,normdiv2)
-  names(out) <- c("SumSqrs", "D_gamma", "D_alpha", "D_beta", "Sorensen", "Jaccard","qdiv","normdiv1",'normdiv2')
-  out
-  }
-  else {
-    if (output=="normdiv1"){
-       out2<-c(Jaccard)
-  out2
-    }
-  else {
-    out3<-c(qdiv)
-    out3
-  }
-}
+	if(output=="everything") {
+		out<-c(SumSqrs, D_gamma, D_alpha, D_beta, Sorensen, Jaccard,qdiv,normdiv1,normdiv2)
+		names(out) <- c("SumSqrs", "D_gamma", "D_alpha", "D_beta", "Sorensen", "Jaccard","qdiv","normdiv1",'normdiv2')
+  		out
+  	}
+  	else {
+  		if (output=="normdiv1"){
+			out2<-c(Jaccard)
+  		out2
+		}
+		else {
+			out3<-c(qdiv)
+			out3
+		}
+	}
 
-#out <- c(SumSqrs, D_gamma, D_alpha, D_beta, Sorensen, Jaccard,qdiv,normdiv1,normdiv2)
-#names(out) <- c("SumSqrs", "D_gamma", "D_alpha", "D_beta", "Sorensen", "Jaccard","qdiv","normdiv1",'normdiv2')
-#out
-#out2<-c(Jaccard)
-#out2
+	#out <- c(SumSqrs, D_gamma, D_alpha, D_beta, Sorensen, Jaccard,qdiv,normdiv1,normdiv2)
+	#names(out) <- c("SumSqrs", "D_gamma", "D_alpha", "D_beta", "Sorensen", "Jaccard","qdiv","normdiv1",'normdiv2')
+	#out
+	#out2<-c(Jaccard)
+	#out2
 }
 ###############################################################################
 chaochiuizer(Z=data1985,q=2,output = "everything")
