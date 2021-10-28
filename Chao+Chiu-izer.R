@@ -3,8 +3,8 @@
 
 ##################################################
 library(tidyverse)
-data1985<-read.table("percov1985.txt",header = TRUE)%>%select(-1)%>%as.matrix()
-data1983<-read.table("percov1983.txt",header = TRUE)%>%select(-1)%>%as.matrix()
+data1985 <- read.table("percov1985.txt", header = TRUE) %>% select(-1) %>% as.matrix()
+data1983 <- read.table("percov1983.txt", header = TRUE) %>% select(-1) %>% as.matrix()
 chaochiuizer <- function(Z, q, output) {
 
 	##################################################
@@ -16,40 +16,44 @@ chaochiuizer <- function(Z, q, output) {
 
 	##################################################
 	# eqn 2, matrix of mean abundance (the "null")
-	M = matrix(rep(rowSums(Z)/N, each=N), ncol = N, byrow=T)
+	M = matrix(rep(rowSums(Z) / N, each=N), ncol = N, byrow = T)
 
 	##################################################
 
 	#Variance Framework
 	#eqn 3, total centered sum of squares
-	SumSqrs= sum((Z-M)^2)
+	SumSqrs= sum((Z - M) ^ 2)
 	
 	##################################################
 	#Decompostion Framework
 
 	# eqn 5c, multiplicative beta component
 	# first, redefine reality to make life a little easier
-	Ln = function(x) {ifelse(x != 0, log(x), 0)}
-	Exp = function(x, y) {ifelse(x != 0, x^y, 0)}
+	Ln = function(x) {
+		ifelse(x != 0, log(x), 0)
+	}
+	Exp = function(x, y) {
+		ifelse(x != 0, x^y, 0)
+	}
 
 	# eqn 5a, gamma diversity. note relativized by total abundance
 	D_gamma = ifelse(q != 1,
-		sum(Exp(rowSums(Z)/sum(Z), q))^(1/(1 - q)),
-		exp(-sum((rowSums(Z)/sum(Z))*Ln(rowSums(Z)/sum(Z)))) )
+		sum(Exp(rowSums(Z) / sum(Z), q)) ^ (1/(1 - q)),
+		exp(-sum((rowSums(Z) / sum(Z)) * Ln(rowSums(Z) / sum(Z)))))
 	
 	# eqn 5b, alpha diversity.
 	D_alpha = ifelse(q != 1,
-		(1/N)*sum(Exp(Z/sum(Z), q))^(1/(1-q)), 
-		exp(-sum((Z/sum(Z))*Ln(Z/sum(Z))) - log(N)) )
+		(1/N) * sum(Exp(Z / sum(Z), q)) ^ (1 / (1 - q)), 
+		exp(-sum((Z / sum(Z)) * Ln(Z / sum(Z))) - log(N)))
 
 	# eqn 5c, multiplicative beta component
-	D_beta = D_gamma/D_alpha
+	D_beta = D_gamma / D_alpha
 
 	##################################################
 	# Decompostion normalized overlap measures
 	# eqn 6a, N-community Sorensen; effective average proportion of a community's species that are shared across all communities; 1 - CqN is the effective average of unique species in a community
 	C_qN = ifelse(q != 1,
-		((1/D_beta)^(q-1) - (1/N)^(q-1))/(1 - (1/N)^(q-1)),
+		((1 / D_beta) ^ (q - 1) - (1 / N) ^ (q - 1)) / (1 - (1 / N) ^ (q - 1)),
 		1 - (1/(sum(Z)*Ln(N)))*sum(Z*Ln(Z/rowMeans(Z))) )
 	Sorensen=1-C_qN
 	# when Z is within-community rel abundances, q=1 reduces to Horn and q=2 reduces to Morisita-Horn. Is there a general solution for q=1?
