@@ -1,5 +1,6 @@
 #chaochiuizeradapted from Tina Harrison"s work
 
+
 ##################################################
 library(tidyverse)
 data1985 <-
@@ -172,11 +173,22 @@ for (i in seq(qute)) {
 
 qvector1983 <- NULL
 qvector1985 <- NULL
+
 for (i in seq(qute)) {
   qvector1985[i] <-
     chaochiuizer(Z = data1985, output = "qdiv", q = qute[i])
   qvector1983[i] <-
     chaochiuizer(Z = data1983, output = "qdiv", q = qute[i])
+}
+
+jaccardvect1983<-NULL
+jaccardvect1985<-NULL
+
+for (i in seq(qute)) {
+  jaccardvect1983[i] <-
+    chaochiuizer(Z = data1985, output = "Jaccard", q = qute[i])
+  jaccardvect1985[i] <-
+    chaochiuizer(Z = data1983, output = "Jaccard", q = qute[i])
 }
 
 #figure 2a
@@ -201,6 +213,17 @@ normalized_divergence <-
     color = year
   )) + geom_line() + geom_point()
 normalized_divergence
-###################
 
-chaochiuizer(Z=test,q=2,output='normdiv1')
+#Jaccard figure
+Jaccard_divergence <-
+  data.frame(qute, jaccardvect1983, jaccardvect1985) %>%
+  pivot_longer(2:3, names_to = "year", values_to = "differentation") %>%
+  ggplot(aes(
+    x = qute,
+    y = differentation,
+    group = year,
+    color = year
+  )) + geom_line() + geom_point()
+Jaccard_divergence
+
+
