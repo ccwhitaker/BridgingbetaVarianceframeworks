@@ -77,7 +77,7 @@ chaochiuizer <- function(Z, q, output) {
   #################################################
   #eqn 12a, normalized divergence 
 
-  normdiv1=(sum((Z^q)-(M^q)))/(((N^q)-N)*rowSums(M))
+  normdiv1=(sum((Z^q)-(M^q)))/(((N^q)-N)*colSums(M^q)[1])
 
   # summary stuff
   N; sum(Z); S; q
