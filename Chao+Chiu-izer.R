@@ -97,8 +97,9 @@ chaochiuizer <- function(Z, q, output) {
         Sorensen,
         Jaccard,
         qdiv,
-        normdiv1,
-        normdiv2)
+        normdiv1
+       # normdiv2
+       )
     names(out) <-
       c(
         "SumSqrs",
@@ -108,8 +109,8 @@ chaochiuizer <- function(Z, q, output) {
         "Sorensen",
         "Jaccard",
         "qdiv",
-        "normdiv1",
-        'normdiv2'
+        "normdiv1"
+      #  'normdiv2'
       )
     out
   }
@@ -158,7 +159,7 @@ chaochiuizer(Z=data1985,q=2,output = "qdiv")
 
 #how might we use the jaccard or normdiv measure to compare communities? 
 
-qute <- seq(0, 2, by=0.1)#create a vector of possible q values
+qute <- seq(0, 2, by=0.01)#create a vector of possible q values
 
 
 normvector1985 <- NULL#create an empty vector
